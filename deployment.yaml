@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: spark-api
+  name: spark-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-api
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: spark-api
+    spec:
+      containers:
+      - image: jojang91/spark-api:0.0.1
+        name: spark-api
+        imagePullPolicy: Always
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: spark-api
+  name: spark-api
+spec:
+  ports:
+  - name: 8902-8902
+    port: 8902
+    protocol: TCP
+    targetPort: 8902
+  selector:
+    app: spark-api
+  type: ClusterIP
