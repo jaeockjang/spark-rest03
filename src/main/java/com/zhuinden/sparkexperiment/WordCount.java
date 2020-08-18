@@ -2,10 +2,14 @@ package com.zhuinden.sparkexperiment;
 
 
 
+import lombok.Synchronized;
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -18,46 +22,40 @@ import java.util.*;
 @Component
 public class WordCount {
 
-    @Autowired
-    private SparkSession sparkSession;
-    static final String path = "/opt/bitnami/spark/data2/";
-    static final String fileName = "/opt/bitnami/spark/data2/schedule.csv";
+    @Value("${app.name:rest03}")
+    private String appName;
 
+    @Value("${spark.home}")
+    private String sparkHome;
+
+    @Value("${master.uri:local[*]}")
+    private String masterUri;
+
+    private SparkSession sparkSession;
+
+    @Value("${data.path:./}")
+    private String path;
+
+    @Synchronized
     public List<Count> count() throws Exception {
 
+        // Setting --------------------------------------------------
+        SparkConf sparkConf = new SparkConf()
+                .setAppName(appName)
+                .setMaster(masterUri)
+                ;
 
-        //        String input = "hello world hello hello hello";
-//        String[] _words = input.split(" ");
-//        List<Word> words = Arrays.stream(_words).map(Word::new).collect(Collectors.toList());
-//         words.forEach(x -> System.out.println( " word :" + x.getWord()) );
-//
-//        Dataset<Row> dataFrame = sparkSession.createDataFrame(words, Word.class);
-//        dataFrame.collectAsList().forEach(x->  System.out.println("xxx:" + x) );
+        JavaSparkContext javaSparkContext=new JavaSparkContext(sparkConf);
 
-//        JavaSparkContext jsc = new JavaSparkContext(sparkSession.sparkContext());
-//        JavaRDD<String> dataSet =jsc.textFile(path+ "schedule.csv",8);
-//        dataSet.persist(StorageLevel.MEMORY_AND_DISK_SER_2());
-//        System.out.println( dataSet.collect().get(0));
-//        System.out.println( dataSet.collect().get(1));
-//
-//
-//        SQLContext sqlContext= sparkSession.sqlContext();
-////        sqlContext.read().option("header","true").csv(path+ "schedule.csv").toDF();
-//
-////        sqlContext.read().format("jdbc").option("url", "jdbc:mysql://opus365-dev01.cbqbqnguxslu.ap-northeast-2.rds.amazonaws.com:3306/ftr?autoReconnection=true&useUnicode=true&characterEncoding=UTF-8&characterSetResults=UTF-8&useSSL=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Seoul").option("dbtable", "ftr.ftr_ofer").option("user", "ftradm").option("password", "12345678").load();
-//        jsc.stop();
+        sparkSession=SparkSession
+                .builder()
+                .sparkContext(javaSparkContext.sc())
+                .appName("Java Spark SQL basic example")
+                .getOrCreate();
+        //------------------------------------------------------------
 
         JavaRDD<String> textFile = sparkSession.sparkContext().textFile(path+ "schedule.csv",8).toJavaRDD() ;
         System.out.println("Text file count:" + textFile.count() );
-//        List<String> list= textFile.collect();
-//        System.out.println("list.get(0): " + list.get(0) );
-//        System.out.println("list.get(1): " + list.get(1) );
-
-//        for(String in: list ) {
-//            System.out.println(in);
-//        }
-
-
 
         Dataset<Row> data = sparkSession.createDataFrame(textFile, Schedule.class);
         data.createOrReplaceTempView("my_schedule");
@@ -76,100 +74,30 @@ public class WordCount {
         System.out.println( scheduleDataset.toString()) ;
         Dataset<String> j= scheduleDataset.select("carrier_cd").toJSON();
 
-
-
         System.out.println(   ) ;
         System.out.println( "end!!!!!!!!!") ;
 
-//        sqlDS.select("carrier_cd") ;
-
-//        scheduleDataset.show();
-
-
-
-
-//        RDD<String> textFile = sparkSession.sparkContext().textFile(path+ "schedule.csv",8) ;
-//        System.out.println("Text file count:" + textFile.count() );
-//        textFile.saveAsTextFile("output/test5.csv"); ;
-
-//
-//        Dataset<Row> ds= sparkSession.createDataset(textFile,Encoders.STRING()).toDF() ;
-//        ds = ds.persist(StorageLevel.MEMORY_AND_DISK_SER_2());
-//        ds.createOrReplaceTempView("my_schedule");
-//
-////        ds.write().saveAsTable("my_schedule");
-//        Dataset<Row> sqlDS=sparkSession.sql("select count(*) as rCnt from my_schedule").toDF("rCnt");
-//
-//        System.out.println( sqlDS.toString());
-//        System.out.println(sqlDS.col("rCnt"));
-//        System.out.println(sqlDS.select("rCnt"));
-
-
-//        Dataset<Integer> cntDS =sqlDS.map((MapFunction<Row,String>) row -> row.getInt(0), Encoders.INT() );
-
-
-
-//        ds.write().mode(SaveMode.Overwrite).option("header", "true")
-//                .format("com.databricks.spark.csv").save("/output/ds.csv");
-
-
-
-//        C
-//        System.out.println("ds2 - count:" + ds2.toString() );
-//        ds2.write().format("csv").save("outputTest.csv");
-        try {
-//         sparkSession.sql("select * from schedule").write().mode("overwrite").csv("output/test.csv");
-        }catch (Exception ex) {
-            ex.printStackTrace();
-        }
-//         sparkSession.read().format("csv").option("header","true").text("schedule.csv");
-//                 .createOrReplaceTempView("schedule"); ;
-
-
-//        dataFrame.show();
-        //StructType structType = dataFrame.schema();
-
-//        RelationalGroupedDataset groupedDataset = dataFrame.groupBy(col("word"));
-//        groupedDataset.count().show();
-//        List<Row> rows = groupedDataset.count().collectAsList();//JavaConversions.asScalaBuffer(words)).count();
-//        return rows.stream().map(new Function<Row, Count>() {
-//            @Override
-//            public Count apply(Row row) {
-//                return new Count(row.getString(0), row.getLong(1));
-//            }
-//        }).collect(Collectors.toList());
-
-
-//        Dataset<Row> df = sparkSession.readStream().csv("schedule.csv");
-//        df.persist(StorageLevel.MEMORY_AND_DISK_SER_2());
-//        df.cache();
-//        df.show();
-//        df.printSchema();
-
 //        sparkSession.sparkContext().stop();
 
-         proc2() ;
+            proc2() ;
             Count count= new Count();
             count.setWord(UUID.randomUUID().toString());
             count.setCount( Math.random());
+
+
+            // Stop logic =====================================================
+        try {
+//            javaSparkContext.close();
+            sparkSession.sparkContext().stop();
+            sparkSession.close();
+        }catch (Exception ex) {
+
+        }
+
             return Arrays.asList(count);
 
     }
 
-//    private void queryData(JavaSparkContext sc,String query) {
-//
-//        CassandraConnector connector = CassandraConnector.apply(sc.getConf());
-//        try (Session session = connector.openSession()) {
-//
-//
-//            ResultSet results = (ResultSet) session.execute()
-//
-//            System.out.println("\nQuery all results from cassandra's todolisttable:\n" + results.all());
-//
-//
-//        }
-//
-//    }
 
 
     private void proc2() {

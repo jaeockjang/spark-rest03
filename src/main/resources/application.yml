@@ -1,0 +1,24 @@
+spring:
+    profiles:
+        active: default
+app:
+    name: Rest-Spark03
+master:
+    uri: spark://jojang-lenovo:7077
+server:
+    port: 8902
+data:
+    path: ./
+---
+spring:
+    profiles: docker
+app:
+    name: Rest-Spark03
+master:
+    uri: spark://my-release6-spark-master-svc:7077
+server:
+    port: 8902
+data:
+    path: /opt/bitnami/spark/data2/
+
+
